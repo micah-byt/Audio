@@ -1,0 +1,32 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Production
+dist/
+build/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+.env
+
+# MacOS
+.DS_Store
+
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Downloaded Models or Large Audio Files
+backend/bgm_library/
+frontend/public/models/
+*.wav
+*.mp3
