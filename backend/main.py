@@ -10,6 +10,11 @@ import os
 import shutil
 
 from transformers import pipeline
+from epidemic_api import (
+    search_mock_bgm, search_mock_sfx,
+    search_real_bgm, search_real_sfx,
+    is_real_mode
+)
 
 app = FastAPI()
 
@@ -237,6 +242,49 @@ async def analyze_scoring(req: ScoringRequest):
                 mapped_tracks.append({"filename": matched_sfx, "time": t, "type": "sfx"})
 
     return {"mapped_tracks": mapped_tracks}
+
+
+# ── Epidemic Sound API Proxy Endpoints ───────────────────────────────────────
+
+class ESSearchRequest(BaseModel):
+    query: str = ""
+    limit: int = 5
+
+
+@app.get("/api/epidemic/status")
+def epidemic_status():
+    """Check if real ES API key is configured."""
+    return {"real_mode": is_real_mode(), "is_mock": not is_real_mode()}
+
+
+@app.post("/api/epidemic/search-bgm")
+async def search_epidemic_bgm(req: ESSearchRequest):
+    """Search BGM tracks. Uses real ES API if ES_API_KEY is set, else mock."""
+    if not is_real_mode():
+        tracks = search_mock_bgm(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": True}
+    try:
+        tracks = await search_real_bgm(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": False}
+    except Exception as e:
+        print(f"ES API error, falling back to mock: {e}")
+        tracks = search_mock_bgm(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": True}
+
+
+@app.post("/api/epidemic/search-sfx")
+async def search_epidemic_sfx(req: ESSearchRequest):
+    """Search SFX. Uses real ES API if ES_API_KEY is set, else mock."""
+    if not is_real_mode():
+        tracks = search_mock_sfx(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": True}
+    try:
+        tracks = await search_real_sfx(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": False}
+    except Exception as e:
+        print(f"ES SFX API error, falling back to mock: {e}")
+        tracks = search_mock_sfx(req.query, req.limit)
+        return {"tracks": tracks, "is_mock": True}
 
 frontend_dist = os.path.abspath(os.path.join(os.path.dirname(__file__), "../frontend/dist"))
 @app.get("/{catchall:path}")

@@ -1,14 +1,16 @@
 import { Wand2, ArrowRight } from 'lucide-react'
 
-function ScriptViewer({ segments, addedTracks, onSeek, clickable }) {
+function ScriptViewer({ segments, addedTracks, onSeek, clickable, currentTime }) {
   return (
     <div className="script-viewer">
       {segments.length > 0 ? segments.map((seg, idx) => {
         const matched = addedTracks.filter(t => t.time >= seg.start - 0.1 && t.time <= seg.end + 0.1)
+        const isActive = currentTime != null && currentTime >= seg.start && currentTime <= seg.end
         return (
-          <div key={idx} className={`segment${matched.length > 0 ? ' has-sound' : ''}`}
+          <div key={idx}
+            className={`segment${matched.length > 0 ? ' has-sound' : ''}${isActive ? ' active' : ''}`}
             onClick={() => clickable && onSeek(seg.start)}
-            style={{ cursor: clickable ? 'pointer' : 'default' }}>
+            style={{ cursor: clickable ? 'pointer' : 'default', ...(isActive ? { borderLeft: '3px solid var(--primary)', background: 'rgba(124,92,252,0.08)' } : {}) }}>
             <div className="segment-time">
               {new Date(seg.start * 1000).toISOString().substring(14, 19)} ~ {new Date(seg.end * 1000).toISOString().substring(14, 19)}
             </div>

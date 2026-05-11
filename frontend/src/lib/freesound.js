@@ -4,6 +4,7 @@
  */
 
 const BASE = 'https://freesound.org/apiv2'
+const BACKEND = import.meta.env.VITE_BACKEND_URL || ''
 
 function getKey() {
   return localStorage.getItem('freesound_api_key') || ''
@@ -44,13 +45,16 @@ export async function searchSounds(query, { pageSize = 5, filter = '' } = {}) {
     throw new Error(err.detail || `Freesound API error ${res.status}`)
   }
   const data = await res.json()
-  return (data.results || []).map(s => ({
-    id: s.id,
-    name: s.name,
-    duration: Math.round(s.duration * 10) / 10,
-    previewUrl: s.previews?.['preview-hq-mp3'] || s.previews?.['preview-lq-mp3'],
-    tags: s.tags || [],
-  }))
+  return (data.results || []).map(s => {
+    const rawUrl = s.previews?.['preview-hq-mp3'] || s.previews?.['preview-lq-mp3']
+    return {
+      id: s.id,
+      name: s.name,
+      duration: Math.round(s.duration * 10) / 10,
+      previewUrl: rawUrl ? `${BACKEND}/api/proxy-audio?url=${encodeURIComponent(rawUrl)}` : null,
+      tags: s.tags || [],
+    }
+  })
 }
 
 /**
@@ -59,7 +63,7 @@ export async function searchSounds(query, { pageSize = 5, filter = '' } = {}) {
 export async function searchBGM(moodQuery, pageSize = 5) {
   return searchSounds(moodQuery, {
     pageSize,
-    filter: 'duration:[30 TO 300] type:wav OR type:mp3',
+    filter: 'duration:[30 TO 300]',
   })
 }
 
